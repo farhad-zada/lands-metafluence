@@ -2,19 +2,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.12;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 
-contract Land is ERC721Enumerable, Ownable  {
+contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
 
     IERC20Upgradeable meto;
     IERC20Upgradeable busd;
 
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
+    using CountersUpgradeable for CountersUpgradeable.Counter;
+    CountersUpgradeable.Counter private _tokenIds;
     enum ASSET {METO, BUSD}
 
     struct OptionLaunchpadLand{
@@ -32,14 +32,16 @@ contract Land is ERC721Enumerable, Ownable  {
     mapping(address => bool) public whiteListAddresses;
     mapping(address => OptionLaunchpadLand) public launchpadLands;
     // use as the index if item not found in array
-    uint256 private ID_NOT_FOUND = 9999999999999999;
+    uint256 private ID_NOT_FOUND;
     //block transaction or  set new land price if argument = ID_SKIP_PRICE_VALUE
-    uint256 private ID_SKIP_PRICE_VALUE = 9999999999999999;
-    uint256 public LAND_PRICE_METO = 95;
-    uint256 public LAND_PRICE_BUSD = 1;
-    uint256 public WHITELIST_PRICE_METO = 85;
-    uint256 public WHITELIST_PRICE_BUSD = 1;
-    uint256 public ONE_BUSD_PRICE = 100; //1 busd value by meto
+    uint256 private ID_SKIP_PRICE_VALUE;
+    uint256 public LAND_PRICE_METO;
+    uint256 public LAND_PRICE_BUSD;
+    uint256 public WHITELIST_PRICE_METO;
+    uint256 public WHITELIST_PRICE_BUSD;
+    uint256 public ONE_BUSD_PRICE; //1 busd value by meto
+    uint public MAX_LAND_COUNT_PER_ACCOUNT;
+    uint public MAX_ID;
              
     string public baseTokenURI;
     bool private launchpadSaleStatus;
@@ -50,15 +52,22 @@ contract Land is ERC721Enumerable, Ownable  {
     event MultipleMint(address indexed _from, uint256[] tokenIds, uint256 _price);
     // event Claim(address indexed _from, uint256 _tid, uint256 claimableCount, uint256 claimedCount);
 
-    modifier Claimable () {
-        require(launchpadSaleStatus, "Launchad sale not opened yet.");
-        _;
-    }
-
-    constructor() ERC721("Land Collection", "LND") {
+    function initialize() public initializer {
+        __ERC721_init("Land Collection", "LND");
+        __Ownable_init();
         meto = IERC20Upgradeable(0xc39A5f634CC86a84147f29a68253FE3a34CDEc57);
         busd = IERC20Upgradeable(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee);
         setBaseURI("ipfs://QmeYyiEmYhGmEuMU8q9uMs7Uprs7KGdEiKBwRpSsoapn2K/");
+        ID_NOT_FOUND = 9999999999999999;
+        //block transaction or  set new land price if argument = ID_SKIP_PRICE_VALUE
+        ID_SKIP_PRICE_VALUE = 9999999999999999;
+        LAND_PRICE_METO = 95;
+        LAND_PRICE_BUSD = 1;
+        WHITELIST_PRICE_METO = 85;
+        WHITELIST_PRICE_BUSD = 1;
+        ONE_BUSD_PRICE = 100; //1 busd value by meto
+        MAX_LAND_COUNT_PER_ACCOUNT = 97;
+        MAX_ID = 24000;
     }
 
     function _baseURI() internal view  virtual override returns (string memory) {
@@ -82,6 +91,15 @@ contract Land is ERC721Enumerable, Ownable  {
     function setOneBUSDPrice(uint256 _price) public onlyOwner {
         ONE_BUSD_PRICE = _price;
     }
+
+    function setLandMaxCountPerAccount(uint _v) public onlyOwner {
+        MAX_LAND_COUNT_PER_ACCOUNT = _v;
+    }
+
+    function setMaxId(uint _v) public onlyOwner {
+        MAX_ID = _v;
+    }
+
     function withdrawMeto(address payable addr, uint256 _amount) external onlyOwner {
         SafeERC20Upgradeable.safeTransfer(meto, addr, _amount);
     }
@@ -143,9 +161,10 @@ contract Land is ERC721Enumerable, Ownable  {
     }
 
     function mintWithMeto(uint256[] memory _tids) public {
+        uint alreadyMinted = collection[msg.sender].length;
         uint256[] memory filteredLands = filterAvailableLands(_tids);
         uint256 totalPrice = calculateTotalPrice(filteredLands, ASSET.METO);
-        require(meto.balanceOf(msg.sender) > totalPrice,  "User has not enough balance.");
+        require(alreadyMinted + _tids.length < MAX_LAND_COUNT_PER_ACCOUNT && meto.balanceOf(msg.sender) > totalPrice,  "User has not enough balance.");
 
         SafeERC20Upgradeable.safeTransferFrom(meto, msg.sender, address(this), totalPrice);
     
@@ -164,9 +183,10 @@ contract Land is ERC721Enumerable, Ownable  {
     }
 
     function mintWithBusd(uint256[] memory _tids) public {
+        uint alreadyMinted = collection[msg.sender].length;
         uint256[] memory filteredLands = filterAvailableLands(_tids);
         uint256 totalPrice = calculateTotalPrice(filteredLands, ASSET.BUSD);
-        require(busd.balanceOf(msg.sender) > totalPrice,  "User has not enough balance.");
+        require(alreadyMinted + _tids.length < MAX_LAND_COUNT_PER_ACCOUNT && busd.balanceOf(msg.sender) > totalPrice,  "User has not enough balance.");
 
         SafeERC20Upgradeable.safeTransferFrom(busd, msg.sender, address(this), totalPrice);
     
@@ -186,9 +206,10 @@ contract Land is ERC721Enumerable, Ownable  {
 
     // claim mint single nft without payment and available from launchpad
     function claim(uint256[] memory _ids)
-        public Claimable
+        public
     {
-        require(_ids.length <= launchpadLands[msg.sender].ClaimableCount, 'user reaches claim limit');
+        uint alreadyMinted = collection[msg.sender].length;
+        require(launchpadSaleStatus && alreadyMinted + _ids.length < MAX_LAND_COUNT_PER_ACCOUNT && _ids.length <= launchpadLands[msg.sender].ClaimableCount, 'user reaches claim limit');
         for (uint256 i = 0; i < _ids.length; i++) {
             require(launchpadLands[msg.sender].ClaimedCount < launchpadLands[msg.sender].ClaimableCount, "reach calimable limit.");
             _safeMint(msg.sender, _ids[i]);
