@@ -55,18 +55,18 @@ contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
     function initialize() public initializer {
         __ERC721_init("Land Collection", "LND");
         __Ownable_init();
-        meto = IERC20Upgradeable(0xc39A5f634CC86a84147f29a68253FE3a34CDEc57);
-        busd = IERC20Upgradeable(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee);
+        meto = IERC20Upgradeable(0xa78775bba7a542F291e5ef7f13C6204E704A90Ba);
+        busd = IERC20Upgradeable(0xe9e7cea3dedca5984780bafc599bd69add087d56);
         setBaseURI("ipfs://QmeYyiEmYhGmEuMU8q9uMs7Uprs7KGdEiKBwRpSsoapn2K/");
         ID_NOT_FOUND = 9999999999999999;
         //block transaction or  set new land price if argument = ID_SKIP_PRICE_VALUE
         ID_SKIP_PRICE_VALUE = 9999999999999999;
         LAND_PRICE_METO = 95;
-        LAND_PRICE_BUSD = 1;
+        LAND_PRICE_BUSD = 105;
         WHITELIST_PRICE_METO = 85;
-        WHITELIST_PRICE_BUSD = 1;
-        ONE_BUSD_PRICE = 100; //1 busd value by meto
-        MAX_LAND_COUNT_PER_ACCOUNT = 97;
+        WHITELIST_PRICE_BUSD = 95;
+        ONE_BUSD_PRICE = 345; //1 busd value by meto
+        MAX_LAND_COUNT_PER_ACCOUNT = 94;
         MAX_ID = 24000;
     }
 
@@ -131,6 +131,26 @@ contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
         }
 
         return ID_NOT_FOUND;
+    }
+
+    function removeFromCollection(address _addr, uint256 _tid) public onlyOwner {
+
+        uint256 _index = ID_NOT_FOUND;
+
+        for (uint256 i = 0; i < collection[_addr].length; i++) {
+            if (collection[_addr][i] == _tid) {
+                _index = i;
+            }
+        }
+
+        require(_index != ID_NOT_FOUND, "index out of bound.");
+
+        for (uint i = _index; i < collection[_addr].length - 1; i++) {
+            collection[_addr][i] = collection[_addr][i + 1];
+        }
+
+        collection[_addr].pop();
+
     }
 
     //todo allow multiple launchad address insertation
