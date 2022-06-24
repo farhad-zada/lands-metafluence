@@ -6,9 +6,9 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 
-contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
+contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable  {
 
     IERC20Upgradeable meto;
     IERC20Upgradeable busd;
@@ -22,12 +22,9 @@ contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
         uint ClaimedCount;
     }
 
-    //keeps user minted nfts ids
-    mapping(address => uint256[]) public collection;
     //keep disabled lands ids
     uint256[] public disabledLands;
     //keep investors lands. These lands do not require payment.
-    mapping(uint256 => address) public privateSaleLands;
     //keep whitelist users list. Whitelist users can buy nfts earlier than others.
     mapping(address => bool) public whiteListAddresses;
     mapping(address => OptionLaunchpadLand) public launchpadLands;
@@ -46,19 +43,18 @@ contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
     string public baseTokenURI;
     bool private launchpadSaleStatus;
     bool private whiteListSaleStatus;
-    bool private privateSaleStatus;
     bool private publicSaleStatus;
 
     event MultipleMint(address indexed _from, uint256[] tokenIds, uint256 _price);
     // event Claim(address indexed _from, uint256 _tid, uint256 claimableCount, uint256 claimedCount);
 
     function initialize() public initializer {
-        __ERC721_init("Land Collection", "LND");
+        __ERC721_init("Metafluence Lands", "LAND");
         __Ownable_init();
-        meto = IERC20Upgradeable(0xa78775bba7a542F291e5ef7f13C6204E704A90Ba);
-        busd = IERC20Upgradeable(0xe9e7cea3dedca5984780bafc599bd69add087d56);
-        setBaseURI("ipfs://QmeYyiEmYhGmEuMU8q9uMs7Uprs7KGdEiKBwRpSsoapn2K/");
-        ID_NOT_FOUND = 9999999999999999;
+        meto = IERC20Upgradeable(0xa78775bba7a542F291e5ef7f13C6204E704A90Ba); //main
+        busd = IERC20Upgradeable(0xe9e7cea3dedca5984780bafc599bd69add087d56); //main
+        // setBaseURI("ipfs://QmeYyiEmYhGmEuMU8q9uMs7Uprs7KGdEiKBwRpSsoapn2K/");
+        ID_NOT_FOUND = 9999999999999999999;
         //block transaction or  set new land price if argument = ID_SKIP_PRICE_VALUE
         ID_SKIP_PRICE_VALUE = 9999999999999999;
         LAND_PRICE_METO = 95;
@@ -80,15 +76,26 @@ contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
 
     /* Start of Administrative Functions */
     function setLandPriceWithMeto(uint256 _price, uint256 _whiteListPrice) public onlyOwner {   
-        if (_price != ID_SKIP_PRICE_VALUE || _price == LAND_PRICE_METO) {
+        if (_price != ID_SKIP_PRICE_VALUE) {
             LAND_PRICE_METO = _price;
         }
-        if ( _whiteListPrice != ID_SKIP_PRICE_VALUE || _whiteListPrice == WHITELIST_PRICE_METO) {
+
+        if ( _whiteListPrice != ID_SKIP_PRICE_VALUE) {
             WHITELIST_PRICE_METO = _whiteListPrice;
         }
     }
+
+    function setLandPriceWithBusd(uint256 _price, uint256 _whiteListPrice) public onlyOwner {   
+        if (_price != ID_SKIP_PRICE_VALUE) {
+            LAND_PRICE_BUSD = _price;
+        }
+
+        if ( _whiteListPrice != ID_SKIP_PRICE_VALUE) {
+            WHITELIST_PRICE_BUSD = _whiteListPrice;
+        }
+    }
     
-    function setOneBUSDPrice(uint256 _price) public onlyOwner {
+    function setBusdMetoPair(uint256 _price) public onlyOwner {
         ONE_BUSD_PRICE = _price;
     }
 
@@ -103,9 +110,11 @@ contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
     function withdrawMeto(address payable addr, uint256 _amount) external onlyOwner {
         SafeERC20Upgradeable.safeTransfer(meto, addr, _amount);
     }
+    
     function withdrawBusd(address payable addr, uint256 _amount) external onlyOwner {
         SafeERC20Upgradeable.safeTransfer(busd, addr, _amount);
     }
+
     function setLandAsDisabled(uint256[] memory _tids) public onlyOwner {
         for (uint i = 0; i < _tids.length; i++) {
             disabledLands.push(_tids[i]);
@@ -133,26 +142,6 @@ contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
         return ID_NOT_FOUND;
     }
 
-    function removeFromCollection(address _addr, uint256 _tid) public onlyOwner {
-
-        uint256 _index = ID_NOT_FOUND;
-
-        for (uint256 i = 0; i < collection[_addr].length; i++) {
-            if (collection[_addr][i] == _tid) {
-                _index = i;
-            }
-        }
-
-        require(_index != ID_NOT_FOUND, "index out of bound.");
-
-        for (uint i = _index; i < collection[_addr].length - 1; i++) {
-            collection[_addr][i] = collection[_addr][i + 1];
-        }
-
-        collection[_addr].pop();
-
-    }
-
     //todo allow multiple launchad address insertation
     function setLaunchpadAddresses(address[] memory  _addrs, OptionLaunchpadLand[] memory _options) public onlyOwner{
         for (uint256 i = 0; i < _addrs.length; i++) {
@@ -175,13 +164,19 @@ contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
 
     /* End of Administrative Functions */
 
-    // return user nft collection 
-    function myCollection() public view returns(uint256[] memory) {
-        return collection[msg.sender];
+  function myCollection(address _owner) public view returns (uint256[] memory)
+    {
+        uint256 ownerTokenCount = balanceOf(_owner);
+        uint256[] memory tokenIds = new uint256[](ownerTokenCount);
+        for (uint256 i; i < ownerTokenCount; i++) {
+            tokenIds[i] = tokenOfOwnerByIndex(_owner, i);
+        }
+
+        return tokenIds;
     }
 
     function mintWithMeto(uint256[] memory _tids) public {
-        uint alreadyMinted = collection[msg.sender].length;
+        uint alreadyMinted = balanceOf(msg.sender);
         uint256[] memory filteredLands = filterAvailableLands(_tids);
         uint256 totalPrice = calculateTotalPrice(filteredLands, ASSET.METO);
         require(alreadyMinted + _tids.length < MAX_LAND_COUNT_PER_ACCOUNT && meto.balanceOf(msg.sender) > totalPrice,  "User has not enough balance.");
@@ -195,15 +190,13 @@ contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
             }
 
             _safeMint(msg.sender, filteredLands[i]);
-            //insert minted nft to user collection
-            collection[msg.sender].push(filteredLands[i]);
         }
 
         emit MultipleMint(msg.sender, filteredLands, totalPrice);
     }
 
     function mintWithBusd(uint256[] memory _tids) public {
-        uint alreadyMinted = collection[msg.sender].length;
+        uint alreadyMinted = balanceOf(msg.sender);
         uint256[] memory filteredLands = filterAvailableLands(_tids);
         uint256 totalPrice = calculateTotalPrice(filteredLands, ASSET.BUSD);
         require(alreadyMinted + _tids.length < MAX_LAND_COUNT_PER_ACCOUNT && busd.balanceOf(msg.sender) > totalPrice,  "User has not enough balance.");
@@ -217,8 +210,6 @@ contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
             }
             
             _safeMint(msg.sender, filteredLands[i]);
-            //insert minted nft to user collection
-            collection[msg.sender].push(filteredLands[i]);
         }
 
         emit MultipleMint(msg.sender, filteredLands, totalPrice);
@@ -228,18 +219,15 @@ contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
     function claim(uint256[] memory _ids)
         public
     {
-        uint alreadyMinted = collection[msg.sender].length;
+        uint alreadyMinted = balanceOf(msg.sender);
         require(launchpadSaleStatus && alreadyMinted + _ids.length < MAX_LAND_COUNT_PER_ACCOUNT && _ids.length <= launchpadLands[msg.sender].ClaimableCount, 'user reaches claim limit');
+        
         for (uint256 i = 0; i < _ids.length; i++) {
             require(launchpadLands[msg.sender].ClaimedCount < launchpadLands[msg.sender].ClaimableCount, "reach calimable limit.");
             _safeMint(msg.sender, _ids[i]);
-            //increase user claimed land count
             launchpadLands[msg.sender].ClaimedCount++;
-            //insert minted nft to user collection
-            collection[msg.sender].push(_ids[i]);
         }
 
-        //todo add emit
     }
 
     // check given _tid inside disabledLand or not
@@ -253,24 +241,12 @@ contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
         return false;
     }
 
-    function _isSaleOpened() internal view returns(bool) {
-        if (publicSaleStatus) {
-            return true;
-        }
-        
-        if (whiteListAddresses[msg.sender] && whiteListSaleStatus) {
-            return true;
-        }
-
-        return false;
-    }
-    
     function filterAvailableLands(uint256[] memory _tids) private view returns(uint256[] memory) {
 
         uint256[] memory filteredLands = new uint256[](_tids.length);
 
         for (uint i = 0; i < _tids.length; i++) {
-            if (isDisabledLand(_tids[i])) {
+            if (isDisabledLand(_tids[i]) || _tids[i] > MAX_ID) {
                 continue;
             }
 
@@ -319,4 +295,5 @@ contract Land is Initializable, ERC721Upgradeable, OwnableUpgradeable  {
 
         return _price * cnt;
     }
+  
 }

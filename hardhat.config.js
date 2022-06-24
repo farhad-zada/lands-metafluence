@@ -6,14 +6,22 @@ require("@nomiclabs/hardhat-ethers");
 require("@openzeppelin/hardhat-upgrades");
 const { API_URL, PRIVATE_KEY } = process.env;
 module.exports = {
-   solidity: "0.8.12",
+   solidity: {
+      version: "0.8.12",
+      settings: {
+         optimizer: {
+           enabled: true,
+           runs: 200
+         }
+       }
+   },
    defaultNetwork: "bsc_testnet",
-   settings: {
-      optimizer: {
-        enabled: true,
-        runs: 20,
-      },
-    },
+   // settings: {
+   //    optimizer: {
+   //      enabled: true,
+   //      runs: 2000,
+   //    },
+   //  },
    networks: {
       hardhat: {},
       ropsten: {
