@@ -232,6 +232,11 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
 
     // check given _tid inside disabledLand or not
     function isDisabledLand(uint256 _tid) private view returns(bool) {
+
+        if (_tid > MAX_ID) {
+            return true;
+        }
+
         for (uint256 i = 0; i < disabledLands.length; i++) {
             if (disabledLands[i] == _tid) {
                 return true;
@@ -246,7 +251,7 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
         uint256[] memory filteredLands = new uint256[](_tids.length);
 
         for (uint i = 0; i < _tids.length; i++) {
-            if (isDisabledLand(_tids[i]) || _tids[i] > MAX_ID) {
+            if (isDisabledLand(_tids[i])) {
                 continue;
             }
 
