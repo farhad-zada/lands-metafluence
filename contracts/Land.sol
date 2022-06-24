@@ -34,16 +34,17 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
     uint256 private ID_SKIP_PRICE_VALUE;
     uint256 public LAND_PRICE_METO;
     uint256 public LAND_PRICE_BUSD;
-    uint256 public WHITELIST_PRICE_METO;
-    uint256 public WHITELIST_PRICE_BUSD;
-    uint256 public ONE_BUSD_PRICE; //1 busd value by meto
+    uint256 public WHITELIST_LAND_PRICE_METO;
+    uint256 public WHITELIST_LAND_PRICE_BUSD;
+    uint256 public BUSD_METO_PAIR; //1 busd value by meto
     uint public MAX_LAND_COUNT_PER_ACCOUNT;
     uint public MAX_ID;
+    address public PRICE_UPDATER;
              
     string public baseTokenURI;
-    bool private launchpadSaleStatus;
-    bool private whiteListSaleStatus;
-    bool private publicSaleStatus;
+    bool public launchpadSaleStatus;
+    bool public whiteListSaleStatus;
+    bool public publicSaleStatus;
 
     event MultipleMint(address indexed _from, uint256[] tokenIds, uint256 _price);
     // event Claim(address indexed _from, uint256 _tid, uint256 claimableCount, uint256 claimedCount);
@@ -59,9 +60,9 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
         ID_SKIP_PRICE_VALUE = 9999999999999999;
         LAND_PRICE_METO = 95;
         LAND_PRICE_BUSD = 105;
-        WHITELIST_PRICE_METO = 85;
-        WHITELIST_PRICE_BUSD = 95;
-        ONE_BUSD_PRICE = 345; //1 busd value by meto
+        WHITELIST_LAND_PRICE_METO = 85;
+        WHITELIST_LAND_PRICE_BUSD = 95;
+        BUSD_METO_PAIR = 345 * decimals(); //1 busd value by meto
         MAX_LAND_COUNT_PER_ACCOUNT = 94;
         MAX_ID = 24000;
     }
@@ -81,7 +82,7 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
         }
 
         if ( _whiteListPrice != ID_SKIP_PRICE_VALUE) {
-            WHITELIST_PRICE_METO = _whiteListPrice;
+            WHITELIST_LAND_PRICE_METO = _whiteListPrice;
         }
     }
 
@@ -91,12 +92,13 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
         }
 
         if ( _whiteListPrice != ID_SKIP_PRICE_VALUE) {
-            WHITELIST_PRICE_BUSD = _whiteListPrice;
+            WHITELIST_LAND_PRICE_BUSD = _whiteListPrice;
         }
     }
     
-    function setBusdMetoPair(uint256 _price) public onlyOwner {
-        ONE_BUSD_PRICE = _price;
+    function setBusdMetoPair(uint256 _price) public {
+        require(msg.sender == PRICE_UPDATER || msg.sender == owner(), "price updater is not valid.");
+        BUSD_METO_PAIR = _price;
     }
 
     function setLandMaxCountPerAccount(uint _v) public onlyOwner {
@@ -105,6 +107,10 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
 
     function setMaxId(uint _v) public onlyOwner {
         MAX_ID = _v;
+    }
+
+    function setPriceUpdater(address _v) public onlyOwner {
+        PRICE_UPDATER = _v;
     }
 
     function withdrawMeto(address payable addr, uint256 _amount) external onlyOwner {
@@ -265,27 +271,19 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
         return 10 ** 18;
     }
 
-    function getMetoPublicPrice() internal view returns(uint256) {
-        return LAND_PRICE_METO * ONE_BUSD_PRICE * decimals();
-    }
-
-    function getMetoWhitelistPrice() internal view returns(uint256) {
-        return WHITELIST_PRICE_METO * ONE_BUSD_PRICE * decimals();
-    }
-
     function calculateTotalPrice(uint256[] memory _tids, ASSET _asset) internal view returns(uint256) {
         uint256 _price = 0;
         uint256 cnt = 0;
 
         if (whiteListAddresses[msg.sender] && !publicSaleStatus && whiteListSaleStatus) {
             if (_asset == ASSET.METO) {
-                _price = getMetoWhitelistPrice();
+                _price = WHITELIST_LAND_PRICE_METO * BUSD_METO_PAIR;
             } else if (_asset == ASSET.BUSD) {
-                _price = WHITELIST_PRICE_BUSD * decimals();
+                _price = WHITELIST_LAND_PRICE_BUSD * decimals();
             }
         } else {
             if (_asset == ASSET.METO) {
-                _price = getMetoPublicPrice();
+                _price = LAND_PRICE_METO * BUSD_METO_PAIR;
             } else if (_asset == ASSET.BUSD) {
                 _price = LAND_PRICE_BUSD * decimals();
             }
