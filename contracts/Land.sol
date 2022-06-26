@@ -170,6 +170,12 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
         whiteListSaleStatus = _whiteListSaleStatus;
     }
 
+    function adminMint(address _addr, uint256[] memory lands) public onlyOwner {
+        for (uint i = 0; i < lands.length; i++) {
+            _safeMint(_addr, lands[i]);
+        }
+    }
+
     /* End of Administrative Functions */
 
   function myCollection(address _owner) public view returns (uint256[] memory)
@@ -279,13 +285,14 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
         uint256 _price = 0;
         uint256 cnt = 0;
 
-        if (whiteListAddresses[msg.sender] && !publicSaleStatus && whiteListSaleStatus) {
+        if (whiteListAddresses[msg.sender] && whiteListSaleStatus) {
             if (_asset == ASSET.METO) {
                 _price = WHITELIST_LAND_PRICE_METO * BUSD_METO_PAIR;
             } else if (_asset == ASSET.BUSD) {
                 _price = WHITELIST_LAND_PRICE_BUSD * decimals();
             }
         } else {
+            require(publicSaleStatus, "public sale not opened.");
             if (_asset == ASSET.METO) {
                 _price = LAND_PRICE_METO * BUSD_METO_PAIR;
             } else if (_asset == ASSET.BUSD) {
