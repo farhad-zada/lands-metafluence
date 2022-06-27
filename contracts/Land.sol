@@ -64,7 +64,7 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
         LAND_PRICE_BUSD = 105;
         WHITELIST_LAND_PRICE_METO = 85;
         WHITELIST_LAND_PRICE_BUSD = 95;
-        BUSD_METO_PAIR = 345 * decimals(); //1 busd value by meto
+        BUSD_METO_PAIR = 369 * decimals(); //1 busd value by meto
         MAX_LAND_COUNT_PER_ACCOUNT = 94;
         MAX_ID = 24000;
     }
