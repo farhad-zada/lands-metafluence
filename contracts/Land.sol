@@ -52,17 +52,17 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
     function initialize() public initializer {
         __ERC721_init("Metafluence Lands", "LAND");
         __Ownable_init();
-        meto = IERC20Upgradeable(0xa78775bba7a542F291e5ef7f13C6204E704A90Ba); //main
-        busd = IERC20Upgradeable(0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56); //main
-        // meto = IERC20Upgradeable(0xc39A5f634CC86a84147f29a68253FE3a34CDEc57);
-        // busd = IERC20Upgradeable(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee);
+        // meto = IERC20Upgradeable(0xa78775bba7a542F291e5ef7f13C6204E704A90Ba); //main
+        // busd = IERC20Upgradeable(0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56); //main
+        meto = IERC20Upgradeable(0x1Ea8C8C99A2f91e5eC2BB769D0FaC3ADDfB2b12D);
+        busd = IERC20Upgradeable(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee);
         setBaseURI("https://dcdn.metafluence.com/lands/");
         ID_NOT_FOUND = 9999999999999999999;
         //block transaction or  set new land price if argument = ID_SKIP_PRICE_VALUE
         ID_SKIP_PRICE_VALUE = 9999999999999999;
-        LAND_PRICE_METO = 95;
+        LAND_PRICE_METO = 1;
         LAND_PRICE_BUSD = 105;
-        WHITELIST_LAND_PRICE_METO = 85;
+        WHITELIST_LAND_PRICE_METO = 1;
         WHITELIST_LAND_PRICE_BUSD = 95;
         BUSD_METO_PAIR = 369 * decimals(); //1 busd value by meto
         MAX_LAND_COUNT_PER_ACCOUNT = 94;
@@ -310,4 +310,25 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
         return _price * cnt;
     }
   
+    function pay4LandWithMeto(uint256  count) public {
+        uint256 totalPrice = count * LAND_PRICE_METO * BUSD_METO_PAIR;
+        require(meto.balanceOf(msg.sender) > totalPrice, "not enough balance");
+
+        SafeERC20Upgradeable.safeTransferFrom(meto, msg.sender, address(this), totalPrice);
+
+        updateLaunchpadLand(count);
+    }
+
+    function pay4LandWithBusd(uint256  count) public {
+        uint256 totalPrice = count * WHITELIST_LAND_PRICE_BUSD * decimals();
+        require(busd.balanceOf(msg.sender) > totalPrice, "not enough balance");
+
+        SafeERC20Upgradeable.safeTransferFrom(busd, msg.sender, address(this), totalPrice);
+
+        updateLaunchpadLand(count);
+    }
+
+    function updateLaunchpadLand(uint256 count) private {
+        launchpadLands[msg.sender].ClaimableCount += count;
+    }
 }
