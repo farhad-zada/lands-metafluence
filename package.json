@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "console": "npx hardhat console --network hardhat"
   },
   "author": "",
   "license": "ISC",
@@ -19,7 +20,7 @@
     "@openzeppelin/contracts": "^4.5.0",
     "@openzeppelin/contracts-upgradeable": "^4.5.2",
     "@openzeppelin/hardhat-upgrades": "^1.19.0",
-    "@truffle/hdwallet-provider": "^2.0.4",
+    "@truffle/hdwallet-provider": "^1.7.0",
     "dotenv": "^16.0.0"
   }
 }

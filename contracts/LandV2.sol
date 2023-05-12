@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 
-contract Land is
+contract LandV2 is
     Initializable,
     ERC721EnumerableUpgradeable,
     OwnableUpgradeable
@@ -368,5 +368,37 @@ contract Land is
         }
 
         return _price * cnt;
+    }
+
+    function pay4LandWithMeto(uint256 count) public {
+        uint256 totalPrice = count * LAND_PRICE_METO * BUSD_METO_PAIR;
+        require(meto.balanceOf(msg.sender) > totalPrice, "not enough balance");
+
+        SafeERC20Upgradeable.safeTransferFrom(
+            meto,
+            msg.sender,
+            address(this),
+            totalPrice
+        );
+
+        updateLaunchpadLand(count);
+    }
+
+    function pay4LandWithBusd(uint256 count) public {
+        uint256 totalPrice = count * WHITELIST_LAND_PRICE_BUSD * decimals();
+        require(busd.balanceOf(msg.sender) > totalPrice, "not enough balance");
+
+        SafeERC20Upgradeable.safeTransferFrom(
+            busd,
+            msg.sender,
+            address(this),
+            totalPrice
+        );
+
+        updateLaunchpadLand(count);
+    }
+
+    function updateLaunchpadLand(uint256 count) private {
+        launchpadLands[msg.sender].ClaimableCount += count;
     }
 }
