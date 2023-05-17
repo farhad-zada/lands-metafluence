@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 
-contract LandV2 is
+contract LandV3 is
     Initializable,
     ERC721EnumerableUpgradeable,
     OwnableUpgradeable
@@ -186,7 +186,6 @@ contract LandV2 is
     ) public onlyOwner {
         for (uint256 i = 0; i < _addrs.length; i++) {
             launchpadLands[_addrs[i]] = _options[i];
-            TOTAL_PRESOLD += _options[i].ClaimableCount;
         }
     }
 
@@ -389,5 +388,47 @@ contract LandV2 is
         }
 
         return _price * cnt;
+    }
+
+    function pay4LandWithMeto(uint256 count) public {
+        require(
+            count + totalSupply() + TOTAL_PRESOLD + disabledLands.length <=
+                MAX_ID,
+            "request out of bound"
+        );
+        uint256 totalPrice = count * LAND_PRICE_METO * BUSD_METO_PAIR;
+        require(meto.balanceOf(msg.sender) > totalPrice, "not enough balance");
+
+        SafeERC20Upgradeable.safeTransferFrom(
+            meto,
+            msg.sender,
+            address(this),
+            totalPrice
+        );
+        TOTAL_PRESOLD += count;
+        updateLaunchpadLand(count);
+    }
+
+    function pay4LandWithBusd(uint256 count) public {
+        require(
+            count + totalSupply() + TOTAL_PRESOLD + disabledLands.length <=
+                MAX_ID,
+            "request out of bound"
+        );
+        uint256 totalPrice = count * WHITELIST_LAND_PRICE_BUSD * decimals();
+        require(busd.balanceOf(msg.sender) > totalPrice, "not enough balance");
+
+        SafeERC20Upgradeable.safeTransferFrom(
+            busd,
+            msg.sender,
+            address(this),
+            totalPrice
+        );
+        TOTAL_PRESOLD += count;
+        updateLaunchpadLand(count);
+    }
+
+    function updateLaunchpadLand(uint256 count) private {
+        launchpadLands[msg.sender].ClaimableCount += count;
     }
 }
