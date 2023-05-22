@@ -1,11 +1,11 @@
 const { ethers, upgrades } = require("hardhat");
 async function main() {
-  const Levels = await ethers.getContractFactory("Levels");
+  const Land = await ethers.getContractFactory("Land");
 
-  const levels = await upgrades.deployProxy(Levels);
+  const land = await upgrades.deployProxy(Land);
   // Start deployment, returning a promise that resolves to a contract object
-  await levels.deployed();
-  console.log("Contract deployed to address:", levels.address);
+  await land.deployed();
+  console.log("Contract deployed to address:", land.address);
 }
 
 main()
