@@ -15,7 +15,7 @@ module.exports = {
       },
     },
   },
-  defaultNetwork: "hardhat",
+  defaultNetwork: "bsc_testnet",
   // settings: {
   //    optimizer: {
   //      enabled: true,

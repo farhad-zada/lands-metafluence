@@ -43,8 +43,6 @@ contract LandV2 is
     uint256 public WHITELIST_LAND_PRICE_METO;
     uint256 public WHITELIST_LAND_PRICE_BUSD;
     uint256 public BUSD_METO_PAIR; //1 busd value by meto
-    //
-    //
     uint public MAX_LAND_COUNT_PER_ACCOUNT;
     uint public MAX_ID;
     address public PRICE_UPDATER;
@@ -59,25 +57,24 @@ contract LandV2 is
         uint256[] tokenIds,
         uint256 _price
     );
-    uint256 public TOTAL_PRESOLD;
 
     // event Claim(address indexed _from, uint256 _tid, uint256 claimableCount, uint256 claimedCount);
 
-    function initialize(address _busd, address _meto) public initializer {
+    function initialize() public initializer {
         __ERC721_init("Metafluence Lands", "LAND");
-        __Ownable_init();
-        // meto = IERC20Upgradeable(0xc39A5f634CC86a84147f29a68253FE3a34CDEc57); //main
-        // busd = IERC20Upgradeable(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee); //main
-        meto = IERC20Upgradeable(_meto);
-        busd = IERC20Upgradeable(_busd);
+        // __Ownable_init();
+        meto = IERC20Upgradeable(0xa78775bba7a542F291e5ef7f13C6204E704A90Ba); //main
+        busd = IERC20Upgradeable(0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56); //main
+        // meto = IERC20Upgradeable(0xc39A5f634CC86a84147f29a68253FE3a34CDEc57); //test
+        // busd = IERC20Upgradeable(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee); //test
         setBaseURI("https://dcdn.metafluence.com/lands/");
         ID_NOT_FOUND = 9999999999999999999;
         //block transaction or  set new land price if argument = ID_SKIP_PRICE_VALUE
         ID_SKIP_PRICE_VALUE = 9999999999999999;
-        LAND_PRICE_METO = 1;
-        LAND_PRICE_BUSD = 1;
-        WHITELIST_LAND_PRICE_METO = 1;
-        WHITELIST_LAND_PRICE_BUSD = 1;
+        LAND_PRICE_METO = 95;
+        LAND_PRICE_BUSD = 105;
+        WHITELIST_LAND_PRICE_METO = 85;
+        WHITELIST_LAND_PRICE_BUSD = 95;
         BUSD_METO_PAIR = 369 * decimals(); //1 busd value by meto
         MAX_LAND_COUNT_PER_ACCOUNT = 94;
         MAX_ID = 24000;
@@ -186,7 +183,6 @@ contract LandV2 is
     ) public onlyOwner {
         for (uint256 i = 0; i < _addrs.length; i++) {
             launchpadLands[_addrs[i]] = _options[i];
-            TOTAL_PRESOLD += _options[i].ClaimableCount;
         }
     }
 
@@ -237,11 +233,7 @@ contract LandV2 is
         require(
             alreadyMinted + _tids.length < MAX_LAND_COUNT_PER_ACCOUNT &&
                 meto.balanceOf(msg.sender) > totalPrice &&
-                _tids.length +
-                    TOTAL_PRESOLD +
-                    totalSupply() +
-                    disabledLands.length >
-                MAX_ID,
+                _tids.length + totalSupply() + disabledLands.length > MAX_ID,
             "User has not enough balance."
         );
 
@@ -270,11 +262,7 @@ contract LandV2 is
         require(
             alreadyMinted + _tids.length < MAX_LAND_COUNT_PER_ACCOUNT &&
                 busd.balanceOf(msg.sender) > totalPrice &&
-                _tids.length +
-                    TOTAL_PRESOLD +
-                    totalSupply() +
-                    disabledLands.length >
-                MAX_ID,
+                _tids.length + totalSupply() + disabledLands.length > MAX_ID,
             "User has not enough balance."
         );
 
@@ -318,7 +306,6 @@ contract LandV2 is
                 "reach calimable limit."
             );
             _safeMint(msg.sender, _ids[i]);
-            TOTAL_PRESOLD -= 1;
             launchpadLands[msg.sender].ClaimedCount++;
         }
 
@@ -389,5 +376,43 @@ contract LandV2 is
         }
 
         return _price * cnt;
+    }
+
+    function pay4LandWithMeto(uint256 count) public {
+        require(
+            count + totalSupply() + disabledLands.length <= MAX_ID,
+            "request out of bound"
+        );
+        uint256 totalPrice = count * LAND_PRICE_METO * BUSD_METO_PAIR;
+        require(meto.balanceOf(msg.sender) > totalPrice, "not enough balance");
+
+        SafeERC20Upgradeable.safeTransferFrom(
+            meto,
+            msg.sender,
+            address(this),
+            totalPrice
+        );
+        updateLaunchpadLand(count);
+    }
+
+    function pay4LandWithBusd(uint256 count) public {
+        require(
+            count + totalSupply() + disabledLands.length <= MAX_ID,
+            "request out of bound"
+        );
+        uint256 totalPrice = count * WHITELIST_LAND_PRICE_BUSD * decimals();
+        require(busd.balanceOf(msg.sender) > totalPrice, "not enough balance");
+
+        SafeERC20Upgradeable.safeTransferFrom(
+            busd,
+            msg.sender,
+            address(this),
+            totalPrice
+        );
+        updateLaunchpadLand(count);
+    }
+
+    function updateLaunchpadLand(uint256 count) private {
+        launchpadLands[msg.sender].ClaimableCount += count;
     }
 }
