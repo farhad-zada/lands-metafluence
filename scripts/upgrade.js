@@ -1,6 +1,6 @@
 // import { ethers, upgrades } from "hardhat";
 async function main() {
-  const LAND_ADDR = "0xb20b17a146d0ceaaaec707a3703d790139f747bf";
+  const LAND_ADDR = "0xb20b17a146D0CeAAAeC707a3703d790139f747bf";
   const Land = await ethers.getContractFactory("Land");
 
   const landv3 = await upgrades.upgradeProxy(LAND_ADDR, Land);
