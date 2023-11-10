@@ -1,44 +1,43 @@
-/**
-* @type import('hardhat/config').HardhatUserConfig
-*/
-require('dotenv').config();
-require("@nomiclabs/hardhat-ethers");
+require("dotenv").config();
+
+require("@nomicfoundation/hardhat-toolbox");
 require("@openzeppelin/hardhat-upgrades");
-const { API_URL, PRIVATE_KEY } = process.env;
+
+/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-   solidity: {
-      version: "0.8.12",
-      settings: {
-         optimizer: {
-           enabled: true,
-           runs: 200
-         }
-       }
-   },
-   defaultNetwork: "bsc_testnet",
-   // settings: {
-   //    optimizer: {
-   //      enabled: true,
-   //      runs: 2000,
-   //    },
-   //  },
-   networks: {
-      hardhat: {},
-      ropsten: {
-         url: API_URL,
-         accounts: [`0x${PRIVATE_KEY}`]
+  solidity: {
+    version: "0.8.20",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
       },
-      bsc_testnet: {
-         url: "https://data-seed-prebsc-1-s1.binance.org:8545",
-         chainId: 97,
-         accounts:
-           process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-       },
-       bsc_mainnet: {
-         url: "https://bsc-dataseed.binance.org/",
-         chainId: 56,
-         accounts:
-           process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-       },
-   },
-}
+    },
+  },
+  mocha: 20000,
+
+  networks: {
+    hardhat: {
+      chainId: 31337,
+      gasPrice: 20000000000, // 20 gwei
+    },
+    bnb: {
+      url: process.env.BNB_RPC,
+      chainId: 97,
+      accounts: [process.env.PKEY],
+      gasPrice: 30000000000, // 20 gwei
+    },
+    plg: {
+      url: process.env.PLG_RPC,
+      chainId: 80001,
+      accounts: [process.env.PKEY],
+      gasPrice: 2000000000, // 20 gwei
+    },
+    bsc: {
+      url: process.env.BSC_RPC,
+      chainId: 56,
+      accounts: [process.env.PKEY],
+    },
+  },
+  defaultNetwork: "hardhat",
+};
