@@ -62,7 +62,7 @@ contract Land is
 
     function initialize() public initializer {
         __ERC721_init("Metafluence Lands", "LAND");
-        // __Ownable_init();
+        __Ownable_init();
         meto = IERC20Upgradeable(0xa78775bba7a542F291e5ef7f13C6204E704A90Ba); //main
         busd = IERC20Upgradeable(0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56); //main
         // meto = IERC20Upgradeable(0xc39A5f634CC86a84147f29a68253FE3a34CDEc57); //test
@@ -341,7 +341,7 @@ contract Land is
 
     function filterAvailableLands(
         uint256[] memory _tids
-    ) private view returns (uint256[] memory) {
+    ) public view returns (uint256[] memory) {
         uint256[] memory filteredLands = new uint256[](_tids.length);
 
         for (uint i = 0; i < _tids.length; i++) {
@@ -362,7 +362,7 @@ contract Land is
     function calculateTotalPrice(
         uint256[] memory _tids,
         ASSET _asset
-    ) internal view returns (uint256) {
+    ) public view returns (uint256) {
         uint256 _price = 0;
         uint256 cnt = 0;
 
@@ -426,5 +426,13 @@ contract Land is
 
     function updateLaunchpadLand(uint256 count) private {
         launchpadLands[msg.sender].ClaimableCount += count;
+    }
+
+    function getMetoAddrs() public view returns (address) {
+        return address(meto);
+    }
+
+    function getBusdAddrs() public view returns (address) {
+        return address(busd);
     }
 }
