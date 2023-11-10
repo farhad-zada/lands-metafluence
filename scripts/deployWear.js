@@ -1,11 +1,10 @@
+const { ethers } = require("hardhat");
+
 // import { ethers, upgrades } from "hardhat";
 async function main() {
-  const LAND_ADDR = "0xb20b17a146D0CeAAAeC707a3703d790139f747bf";
-  const Land = await ethers.getContractFactory("Land");
-
-  const landv3 = await upgrades.upgradeProxy(LAND_ADDR, Land);
+  const wear = await ethers.deployContract("MetawearBurnable");
   // Start deployment, returning a promise that resolves to a contract object
-  console.log("Contract upgraded to address:", landv3.address);
+  console.log("Contract deployed to address:", wear.target);
 }
 
 main()
