@@ -8,16 +8,22 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 
-contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable  {
-
+contract Land is
+    Initializable,
+    ERC721EnumerableUpgradeable,
+    OwnableUpgradeable
+{
     IERC20Upgradeable meto;
     IERC20Upgradeable busd;
 
     using CountersUpgradeable for CountersUpgradeable.Counter;
     CountersUpgradeable.Counter private _tokenIds;
-    enum ASSET {METO, BUSD}
+    enum ASSET {
+        METO,
+        BUSD
+    }
 
-    struct OptionLaunchpadLand{
+    struct OptionLaunchpadLand {
         uint ClaimableCount;
         uint ClaimedCount;
     }
@@ -40,66 +46,80 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
     uint public MAX_LAND_COUNT_PER_ACCOUNT;
     uint public MAX_ID;
     address public PRICE_UPDATER;
-             
+
     string public baseTokenURI;
     bool public launchpadSaleStatus;
     bool public whiteListSaleStatus;
     bool public publicSaleStatus;
 
-    event MultipleMint(address indexed _from, uint256[] tokenIds, uint256 _price);
+    event MultipleMint(
+        address indexed _from,
+        uint256[] tokenIds,
+        uint256 _price
+    );
+
     // event Claim(address indexed _from, uint256 _tid, uint256 claimableCount, uint256 claimedCount);
 
     function initialize() public initializer {
         __ERC721_init("Metafluence Lands", "LAND");
-        __Ownable_init();
-        // meto = IERC20Upgradeable(0xa78775bba7a542F291e5ef7f13C6204E704A90Ba); //main
-        // busd = IERC20Upgradeable(0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56); //main
-        meto = IERC20Upgradeable(0x1Ea8C8C99A2f91e5eC2BB769D0FaC3ADDfB2b12D);
-        busd = IERC20Upgradeable(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee);
+        // __Ownable_init();
+        meto = IERC20Upgradeable(0xa78775bba7a542F291e5ef7f13C6204E704A90Ba); //main
+        busd = IERC20Upgradeable(0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56); //main
+        // meto = IERC20Upgradeable(0xc39A5f634CC86a84147f29a68253FE3a34CDEc57); //test
+        // busd = IERC20Upgradeable(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee); //test
         setBaseURI("https://dcdn.metafluence.com/lands/");
         ID_NOT_FOUND = 9999999999999999999;
         //block transaction or  set new land price if argument = ID_SKIP_PRICE_VALUE
         ID_SKIP_PRICE_VALUE = 9999999999999999;
-        LAND_PRICE_METO = 1;
+        LAND_PRICE_METO = 95;
         LAND_PRICE_BUSD = 105;
-        WHITELIST_LAND_PRICE_METO = 1;
+        WHITELIST_LAND_PRICE_METO = 85;
         WHITELIST_LAND_PRICE_BUSD = 95;
         BUSD_METO_PAIR = 369 * decimals(); //1 busd value by meto
         MAX_LAND_COUNT_PER_ACCOUNT = 94;
         MAX_ID = 24000;
     }
 
-    function _baseURI() internal view  virtual override returns (string memory) {
-         return baseTokenURI;
+    function _baseURI() internal view virtual override returns (string memory) {
+        return baseTokenURI;
     }
-    
+
     function setBaseURI(string memory _baseTokenURI) public onlyOwner {
         baseTokenURI = _baseTokenURI;
     }
 
     /* Start of Administrative Functions */
-    function setLandPriceWithMeto(uint256 _price, uint256 _whiteListPrice) public onlyOwner {   
+    function setLandPriceWithMeto(
+        uint256 _price,
+        uint256 _whiteListPrice
+    ) public onlyOwner {
         if (_price != ID_SKIP_PRICE_VALUE) {
             LAND_PRICE_METO = _price;
         }
 
-        if ( _whiteListPrice != ID_SKIP_PRICE_VALUE) {
+        if (_whiteListPrice != ID_SKIP_PRICE_VALUE) {
             WHITELIST_LAND_PRICE_METO = _whiteListPrice;
         }
     }
 
-    function setLandPriceWithBusd(uint256 _price, uint256 _whiteListPrice) public onlyOwner {   
+    function setLandPriceWithBusd(
+        uint256 _price,
+        uint256 _whiteListPrice
+    ) public onlyOwner {
         if (_price != ID_SKIP_PRICE_VALUE) {
             LAND_PRICE_BUSD = _price;
         }
 
-        if ( _whiteListPrice != ID_SKIP_PRICE_VALUE) {
+        if (_whiteListPrice != ID_SKIP_PRICE_VALUE) {
             WHITELIST_LAND_PRICE_BUSD = _whiteListPrice;
         }
     }
-    
+
     function setBusdMetoPair(uint256 _price) public {
-        require(msg.sender == PRICE_UPDATER || msg.sender == owner(), "price updater is not valid.");
+        require(
+            msg.sender == PRICE_UPDATER || msg.sender == owner(),
+            "price updater is not valid."
+        );
         BUSD_METO_PAIR = _price;
     }
 
@@ -115,11 +135,17 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
         PRICE_UPDATER = _v;
     }
 
-    function withdrawMeto(address payable addr, uint256 _amount) external onlyOwner {
+    function withdrawMeto(
+        address payable addr,
+        uint256 _amount
+    ) external onlyOwner {
         SafeERC20Upgradeable.safeTransfer(meto, addr, _amount);
     }
-    
-    function withdrawBusd(address payable addr, uint256 _amount) external onlyOwner {
+
+    function withdrawBusd(
+        address payable addr,
+        uint256 _amount
+    ) external onlyOwner {
         SafeERC20Upgradeable.safeTransfer(busd, addr, _amount);
     }
 
@@ -140,7 +166,7 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
         disabledLands.pop();
     }
 
-    function getDisabledLandIndex(uint256 _tid) private view returns(uint256) {
+    function getDisabledLandIndex(uint256 _tid) private view returns (uint256) {
         for (uint256 i = 0; i < disabledLands.length; i++) {
             if (disabledLands[i] == _tid) {
                 return i;
@@ -151,20 +177,29 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
     }
 
     //todo allow multiple launchad address insertation
-    function setLaunchpadAddresses(address[] memory  _addrs, OptionLaunchpadLand[] memory _options) public onlyOwner{
+    function setLaunchpadAddresses(
+        address[] memory _addrs,
+        OptionLaunchpadLand[] memory _options
+    ) public onlyOwner {
         for (uint256 i = 0; i < _addrs.length; i++) {
             launchpadLands[_addrs[i]] = _options[i];
         }
     }
 
-    function setWhitelistAddresses(address[] memory _addrs, bool[] memory _values) public onlyOwner 
-    {
+    function setWhitelistAddresses(
+        address[] memory _addrs,
+        bool[] memory _values
+    ) public onlyOwner {
         for (uint i = 0; i < _addrs.length; i++) {
-            whiteListAddresses[_addrs[i]] = _values[i]; 
+            whiteListAddresses[_addrs[i]] = _values[i];
         }
     }
-    
-    function setSaleStatus(bool _launchpadSaleStatus, bool _publicSaleStatus, bool _whiteListSaleStatus) public onlyOwner{
+
+    function setSaleStatus(
+        bool _launchpadSaleStatus,
+        bool _publicSaleStatus,
+        bool _whiteListSaleStatus
+    ) public onlyOwner {
         launchpadSaleStatus = _launchpadSaleStatus;
         publicSaleStatus = _publicSaleStatus;
         whiteListSaleStatus = _whiteListSaleStatus;
@@ -178,8 +213,9 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
 
     /* End of Administrative Functions */
 
-  function myCollection(address _owner) public view returns (uint256[] memory)
-    {
+    function myCollection(
+        address _owner
+    ) public view returns (uint256[] memory) {
         uint256 ownerTokenCount = balanceOf(_owner);
         uint256[] memory tokenIds = new uint256[](ownerTokenCount);
         for (uint256 i; i < ownerTokenCount; i++) {
@@ -190,20 +226,34 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
     }
 
     function mintWithMeto(uint256[] memory _tids) public {
-        require(whiteListSaleStatus || publicSaleStatus,  "sale not started.");
+        require(whiteListSaleStatus || publicSaleStatus, "sale not started.");
         uint alreadyMinted = balanceOf(msg.sender);
         uint256[] memory filteredLands = filterAvailableLands(_tids);
         uint256 totalPrice = calculateTotalPrice(filteredLands, ASSET.METO);
-        require(alreadyMinted + _tids.length < MAX_LAND_COUNT_PER_ACCOUNT && meto.balanceOf(msg.sender) > totalPrice,  "User has not enough balance.");
+        require(
+            alreadyMinted + _tids.length < MAX_LAND_COUNT_PER_ACCOUNT,
+            "Lands: exceeded max / account"
+        );
+        require(
+            meto.balanceOf(msg.sender) > totalPrice,
+            "Lands: user has not enough balance"
+        );
+        require(
+            _tids.length + totalSupply() + disabledLands.length < MAX_ID,
+            "Lands: count exceed MAX_ID"
+        );
 
-        SafeERC20Upgradeable.safeTransferFrom(meto, msg.sender, address(this), totalPrice);
-    
+        SafeERC20Upgradeable.safeTransferFrom(
+            meto,
+            msg.sender,
+            address(this),
+            totalPrice
+        );
+
         for (uint i = 0; i < filteredLands.length; i++) {
-
             if (filteredLands[i] == 0) {
                 continue;
             }
-
             _safeMint(msg.sender, filteredLands[i]);
         }
 
@@ -211,20 +261,35 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
     }
 
     function mintWithBusd(uint256[] memory _tids) public {
-        require(whiteListSaleStatus || publicSaleStatus,  "sale not started.");
+        require(whiteListSaleStatus || publicSaleStatus, "sale not started.");
         uint alreadyMinted = balanceOf(msg.sender);
         uint256[] memory filteredLands = filterAvailableLands(_tids);
         uint256 totalPrice = calculateTotalPrice(filteredLands, ASSET.BUSD);
-        require(alreadyMinted + _tids.length < MAX_LAND_COUNT_PER_ACCOUNT && busd.balanceOf(msg.sender) > totalPrice,  "User has not enough balance.");
+        require(
+            alreadyMinted + _tids.length < MAX_LAND_COUNT_PER_ACCOUNT,
+            "Lands: exceeded max / account"
+        );
+        require(
+            busd.balanceOf(msg.sender) > totalPrice,
+            "Lands: user has not enough balance"
+        );
+        require(
+            _tids.length + totalSupply() + disabledLands.length < MAX_ID,
+            "Lands: count exceed MAX_ID"
+        );
 
-        SafeERC20Upgradeable.safeTransferFrom(busd, msg.sender, address(this), totalPrice);
-    
+        SafeERC20Upgradeable.safeTransferFrom(
+            busd,
+            msg.sender,
+            address(this),
+            totalPrice
+        );
+
         for (uint i = 0; i < filteredLands.length; i++) {
-
             if (filteredLands[i] == 0) {
                 continue;
             }
-            
+
             _safeMint(msg.sender, filteredLands[i]);
         }
 
@@ -232,23 +297,35 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
     }
 
     // claim mint single nft without payment and available from launchpad
-    function claim(uint256[] memory _ids)
-        public
-    {
+    function claim(uint256[] memory _ids) public {
         uint alreadyMinted = balanceOf(msg.sender);
-        require(launchpadSaleStatus && alreadyMinted + _ids.length < MAX_LAND_COUNT_PER_ACCOUNT && _ids.length <= launchpadLands[msg.sender].ClaimableCount, 'user reaches claim limit');
-        
-        for (uint256 i = 0; i < _ids.length; i++) {
-            require(launchpadLands[msg.sender].ClaimedCount < launchpadLands[msg.sender].ClaimableCount, "reach calimable limit.");
+        uint256[] memory filteredLands = filterAvailableLands(_ids);
+        require(
+            launchpadSaleStatus &&
+                alreadyMinted + filteredLands.length <
+                MAX_LAND_COUNT_PER_ACCOUNT &&
+                filteredLands.length <=
+                launchpadLands[msg.sender].ClaimableCount,
+            "user reaches claim limit"
+        );
+        for (uint i = 0; i < filteredLands.length; i++) {
+            if (filteredLands[i] == 0) {
+                continue;
+            }
+            require(
+                launchpadLands[msg.sender].ClaimedCount <
+                    launchpadLands[msg.sender].ClaimableCount,
+                "reach calimable limit."
+            );
             _safeMint(msg.sender, _ids[i]);
             launchpadLands[msg.sender].ClaimedCount++;
         }
 
+        emit MultipleMint(msg.sender, filteredLands, 0);
     }
 
     // check given _tid inside disabledLand or not
-    function isDisabledLand(uint256 _tid) private view returns(bool) {
-
+    function isDisabledLand(uint256 _tid) private view returns (bool) {
         if (_tid > MAX_ID) {
             return true;
         }
@@ -262,8 +339,9 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
         return false;
     }
 
-    function filterAvailableLands(uint256[] memory _tids) private view returns(uint256[] memory) {
-
+    function filterAvailableLands(
+        uint256[] memory _tids
+    ) private view returns (uint256[] memory) {
         uint256[] memory filteredLands = new uint256[](_tids.length);
 
         for (uint i = 0; i < _tids.length; i++) {
@@ -277,11 +355,14 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
         return filteredLands;
     }
 
-    function decimals() internal pure returns(uint256) {
+    function decimals() internal pure returns (uint256) {
         return 10 ** 18;
     }
 
-    function calculateTotalPrice(uint256[] memory _tids, ASSET _asset) internal view returns(uint256) {
+    function calculateTotalPrice(
+        uint256[] memory _tids,
+        ASSET _asset
+    ) internal view returns (uint256) {
         uint256 _price = 0;
         uint256 cnt = 0;
 
@@ -300,8 +381,7 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
             }
         }
 
-
-        for (uint256 i = 0; i<_tids.length; i++) {
+        for (uint256 i = 0; i < _tids.length; i++) {
             if (_tids[i] > 0) {
                 cnt++;
             }
@@ -309,22 +389,38 @@ contract Land is Initializable, ERC721EnumerableUpgradeable, OwnableUpgradeable 
 
         return _price * cnt;
     }
-  
-    function pay4LandWithMeto(uint256  count) public {
+
+    function pay4LandWithMeto(uint256 count) public {
+        require(
+            count + totalSupply() + disabledLands.length <= MAX_ID,
+            "request out of bound"
+        );
         uint256 totalPrice = count * LAND_PRICE_METO * BUSD_METO_PAIR;
         require(meto.balanceOf(msg.sender) > totalPrice, "not enough balance");
 
-        SafeERC20Upgradeable.safeTransferFrom(meto, msg.sender, address(this), totalPrice);
-
+        SafeERC20Upgradeable.safeTransferFrom(
+            meto,
+            msg.sender,
+            address(this),
+            totalPrice
+        );
         updateLaunchpadLand(count);
     }
 
-    function pay4LandWithBusd(uint256  count) public {
+    function pay4LandWithBusd(uint256 count) public {
+        require(
+            count + totalSupply() + disabledLands.length <= MAX_ID,
+            "request out of bound"
+        );
         uint256 totalPrice = count * WHITELIST_LAND_PRICE_BUSD * decimals();
         require(busd.balanceOf(msg.sender) > totalPrice, "not enough balance");
 
-        SafeERC20Upgradeable.safeTransferFrom(busd, msg.sender, address(this), totalPrice);
-
+        SafeERC20Upgradeable.safeTransferFrom(
+            busd,
+            msg.sender,
+            address(this),
+            totalPrice
+        );
         updateLaunchpadLand(count);
     }
 
